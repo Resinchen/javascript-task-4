@@ -4,7 +4,38 @@
  * Сделано задание на звездочку
  * Реализованы методы several и through
  */
-const isStar = true;
+const isStar = false;
+
+let subs = [];
+
+function getQueryEvent(event) {
+    let result = [event];
+    let pos = -1;
+    while ((pos = event.indexOf('.', pos + 1)) !== -1) {
+        result.push(event.substring(0, pos));
+    }
+
+    return result.sort().reverse();
+}
+
+function getEntryByEvent(event) {
+    for (let i = 0; i < subs.length; i++) {
+        if (event === subs[i].key.evt) {
+            return subs[i];
+        }
+    }
+}
+
+function getSubsForEvent(event) {
+    let result = [];
+    for (let i = 0; i < subs.length; i++) {
+        if (event === subs[i].key) {
+            result.push(subs[i]);
+        }
+    }
+
+    return result;
+}
 
 /**
  * Возвращает новый emitter
@@ -20,6 +51,7 @@ function getEmitter() {
          * @param {Function} handler
          */
         on: function (event, context, handler) {
+            subs.push({ key: { evt: event, ctx: context }, value: handler });
             console.info(event, context, handler);
         },
 
@@ -29,6 +61,13 @@ function getEmitter() {
          * @param {Object} context
          */
         off: function (event, context) {
+            const subsOfEvent = getSubsForEvent(event);
+            for (let i = 0; i < subsOfEvent.length; i++) {
+                if (context === subsOfEvent[i].value) {
+                    const index = subs.indexOf(context);
+                    subs.splice(index, 1);
+                }
+            }
             console.info(event, context);
         },
 
@@ -37,6 +76,11 @@ function getEmitter() {
          * @param {String} event
          */
         emit: function (event) {
+            const events = getQueryEvent(event);
+            for (let i = 0; i < events.length; i++) {
+                let entry = getEntryByEvent(events[i]);
+                entry.value.call(entry.key.ctx);
+            }
             console.info(event);
         },
 
