@@ -25,6 +25,23 @@ function getQueryEvent(event) {
 }
 
 /**
+ * Возвращает список событий для удаления
+ * @param {String} event
+ * @returns {String[]}
+ */
+function getOffEvents(event) {
+    const keys = Object.keys(subs);
+    let result = [];
+    for (let i = 0; i < keys.length; i++) {
+        if (keys[i].startsWith(event)) {
+            result.push(keys[i]);
+        }
+    }
+
+    return result.sort().reverse();
+}
+
+/**
  * Возвращает записи соответствующие событию
  * @param {String} event
  * @returns {Object[]}
@@ -64,8 +81,16 @@ function getEmitter() {
          * @param {Object} context
          * @returns {Object}
          */
+
+        // - отписка от `slide.funny` отписывает только от него
+        // - отписка от `slide` отписывает и от `slide`, и от `slide.funny`
+
         off: function (event, context) {
-            subs[event] = subs[event].filter(entry => entry.ctx !== context);
+            const events = getOffEvents(event);
+            for (let i = 0; i < events.length; i++) {
+                const evt = events[i];
+                subs[evt] = subs[evt].filter(entry => entry.ctx !== context);
+            }
 
             return this;
         },
