@@ -8,6 +8,11 @@ const isStar = false;
 
 let subs = [];
 
+/**
+ * Возвращает список предшествующих событий
+ * @param {String} event
+ * @returns {String[]}
+ */
 function getQueryEvent(event) {
     let result = [event];
     let pos = -1;
@@ -15,26 +20,18 @@ function getQueryEvent(event) {
         result.push(event.substring(0, pos));
     }
 
-    return result.sort().reverse();
+    return result.sort().reverse()
+        .filter(ivent => subs[ivent] !== undefined);
 }
 
-function getEntryByEvent(event) {
-    for (let i = 0; i < subs.length; i++) {
-        if (event === subs[i].key.evt) {
-            return subs[i];
-        }
-    }
-}
+/**
+ * Возвращает записи соответствующие событию
+ * @param {String} event
+ * @returns {Object[]}
+ */
+function getEntriesByEvent(event) {
 
-function getSubsForEvent(event) {
-    let result = [];
-    for (let i = 0; i < subs.length; i++) {
-        if (event === subs[i].key) {
-            result.push(subs[i]);
-        }
-    }
-
-    return result;
+    return subs[event];
 }
 
 /**
@@ -49,39 +46,46 @@ function getEmitter() {
          * @param {String} event
          * @param {Object} context
          * @param {Function} handler
+         * @returns {Object}
          */
         on: function (event, context, handler) {
-            subs.push({ key: { evt: event, ctx: context }, value: handler });
-            console.info(event, context, handler);
+            if (subs[event]) {
+                subs[event].push({ ctx: context, func: handler });
+            } else {
+                subs[event] = [{ ctx: context, func: handler }];
+            }
+
+            return this;
         },
 
         /**
          * Отписаться от события
          * @param {String} event
          * @param {Object} context
+         * @returns {Object}
          */
         off: function (event, context) {
-            const subsOfEvent = getSubsForEvent(event);
-            for (let i = 0; i < subsOfEvent.length; i++) {
-                if (context === subsOfEvent[i].value) {
-                    const index = subs.indexOf(context);
-                    subs.splice(index, 1);
-                }
-            }
-            console.info(event, context);
+            subs[event] = subs[event].filter(entry => entry.ctx !== context);
+
+            return this;
         },
 
         /**
          * Уведомить о событии
          * @param {String} event
+         * @returns {Object}
          */
         emit: function (event) {
-            const events = getQueryEvent(event);
-            for (let i = 0; i < events.length; i++) {
-                let entry = getEntryByEvent(events[i]);
-                entry.value.call(entry.key.ctx);
+            const eventsPool = getQueryEvent(event);
+            for (let i = 0; i < eventsPool.length; i++) {
+                const entries = getEntriesByEvent(eventsPool[i]);
+                for (let j = 0; j < entries.length; j++) {
+                    const entry = entries[j];
+                    entry.func.call(entry.ctx);
+                }
             }
-            console.info(event);
+
+            return this;
         },
 
         /**
