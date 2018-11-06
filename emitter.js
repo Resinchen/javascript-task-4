@@ -14,7 +14,7 @@ let subs = [];
  * @returns {String[]}
  */
 function getQueryEvent(event) {
-    let result = [event];
+    const result = [event];
     let pos = -1;
     while ((pos = event.indexOf('.', pos + 1)) !== -1) {
         result.push(event.substring(0, pos));
@@ -31,7 +31,7 @@ function getQueryEvent(event) {
  */
 function getOffEvents(event) {
     const keys = Object.keys(subs);
-    let result = [event];
+    const result = [event];
     for (let i = 0; i < keys.length; i++) {
         if (keys[i].startsWith(event + '.')) {
             result.push(keys[i]);
