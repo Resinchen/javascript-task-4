@@ -30,15 +30,7 @@ function getQueryEvent(event) {
  * @returns {String[]}
  */
 function getOffEvents(event) {
-    const keys = Object.keys(subs);
-    const result = [event];
-    for (let i = 0; i < keys.length; i++) {
-        if (keys[i].startsWith(event + '.')) {
-            result.push(keys[i]);
-        }
-    }
-
-    return result.sort().reverse();
+    return Object.keys(subs).filter(evt => evt === event || evt.startsWith(event + '.'));
 }
 
 /**
