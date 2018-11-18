@@ -6,22 +6,24 @@
  */
 const isStar = false;
 
-let subs = [];
+const subscribes = {};
 
 /**
- * Возвращает список предшествующих событий
+ * Возвращает список из event и его предшественников
  * @param {String} event
  * @returns {String[]}
  */
-function getQueryEvent(event) {
+function getEmitEvent(event) {
     const result = [event];
-    let pos = -1;
-    while ((pos = event.indexOf('.', pos + 1)) !== -1) {
+    let pos = event.indexOf('.');
+    while (pos !== -1) {
         result.push(event.substring(0, pos));
+        pos = event.indexOf('.', pos + 1);
     }
 
-    return result.sort().reverse()
-        .filter(ivent => subs[ivent] !== undefined);
+    return result.sort()
+        .reverse()
+        .filter(ivent => subscribes[ivent] !== undefined);
 }
 
 /**
@@ -30,17 +32,8 @@ function getQueryEvent(event) {
  * @returns {String[]}
  */
 function getOffEvents(event) {
-    return Object.keys(subs).filter(evt => evt === event || evt.startsWith(event + '.'));
-}
-
-/**
- * Возвращает записи соответствующие событию
- * @param {String} event
- * @returns {Object[]}
- */
-function getEntriesByEvent(event) {
-
-    return subs[event];
+    return Object.keys(subscribes)
+        .filter(item => item === event || item.startsWith(event + '.'));
 }
 
 /**
@@ -58,11 +51,10 @@ function getEmitter() {
          * @returns {Object}
          */
         on: function (event, context, handler) {
-            if (subs[event]) {
-                subs[event].push({ ctx: context, func: handler });
-            } else {
-                subs[event] = [{ ctx: context, func: handler }];
+            if (!subscribes[event]) {
+                subscribes[event] = [];
             }
+            subscribes[event].push({ ctx: context, func: handler });
 
             return this;
         },
@@ -75,10 +67,9 @@ function getEmitter() {
          */
         off: function (event, context) {
             const events = getOffEvents(event);
-            for (let i = 0; i < events.length; i++) {
-                const evt = events[i];
-                subs[evt] = subs[evt].filter(entry => entry.ctx !== context);
-            }
+            events.forEach(function (item) {
+                subscribes[item] = subscribes[item].filter(entry => entry.ctx !== context);
+            });
 
             return this;
         },
@@ -89,14 +80,13 @@ function getEmitter() {
          * @returns {Object}
          */
         emit: function (event) {
-            const eventsPool = getQueryEvent(event);
-            for (let i = 0; i < eventsPool.length; i++) {
-                const entries = getEntriesByEvent(eventsPool[i]);
-                for (let j = 0; j < entries.length; j++) {
-                    const entry = entries[j];
+            const events = getEmitEvent(event);
+            events.forEach(function (item) {
+                const entries = subscribes[item];
+                entries.forEach(function (entry) {
                     entry.func.call(entry.ctx);
-                }
-            }
+                });
+            });
 
             return this;
         },
